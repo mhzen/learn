@@ -2,7 +2,7 @@
 
 using namespace std;
 
-main() {
+int main() {
     int hargaPensil = 2500, hargaBuku = 5000, jumlahUang, jumlahPensil, jumlahBuku, sisaUang;
 
     cout << "Masukkan Jumlah Uang: Rp";
