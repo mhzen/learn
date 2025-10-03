@@ -13,9 +13,8 @@ int main() {
             min = m[i];
         }else if (m[i]>max){
             max = m[i];
-        }else {
-            continue;
         }
     }
     cout<<abs(max-min);
+    return 0;
 }

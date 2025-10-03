@@ -1,11 +1,15 @@
 #include <iostream>
 #include <string>
+#include <cstring>
 using namespace std;
 int main() {
-    string n;
+    // string n;
+    char n[100];
     int v=0, c=0;
-    getline(cin, n);
-    for (int i=0; i<n.length(); i++){
+    // getline(cin, n);
+    cin.getline(n, 100);
+    // for (int i=0; i<n.length(); i++){
+    for (int i=0; i<strlen(n); i++){
         switch (n[i]) {
             case 'a': case 'A': v++; break;
             case 'e': case 'E': v++; break;
