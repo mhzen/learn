@@ -1,5 +1,4 @@
 #include <iostream>
-#include <string>
 #include <cstring>
 using namespace std;
 int main() {
@@ -10,14 +9,20 @@ int main() {
     cin.getline(n, 100);
     // for (int i=0; i<n.length(); i++){
     for (int i=0; i<strlen(n); i++){
+        // if (n[i] == 'a' || n[i] == 'A' || n[i] == 'i' || n[i] == 'I' || n[i] == 'u' || n[i] == 'U' || n[i] == 'e' || n[i] == 'E' || n[i] == 'o' || n[i] == 'O'){
+        //     v++;
+        // } else if (n[i]>'a' && n[i]<='z' || n[i]>'A' && n[i]<='Z') {
+        //     c++;
+        // }
         switch (n[i]) {
-            case 'a': case 'A': v++; break;
-            case 'e': case 'E': v++; break;
-            case 'i': case 'I': v++; break;
-            case 'o': case 'O': v++; break;     
-            case 'u': case 'U': v++; break;
-            case ' ': continue; break;
-            default: c++; break;
+            case 'a': case 'A':
+            case 'e': case 'E':
+            case 'i': case 'I':
+            case 'o': case 'O':
+            case 'u': case 'U':
+                v++; break;
+            default:
+                if ((n[i]>'a' && n[i]<='z')||(n[i]>'A' && n[i]<='Z')) c++; break;
         }
     }
     cout<<"vokal: "<<v<<endl<<"konsonan: "<<c<<endl;
