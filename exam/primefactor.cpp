@@ -1,3 +1,6 @@
+// Buatlah program dalam bahasa C++ yang mengambil input sebuah bilangan bulat n dan mengeluarkan output m yaitu banyaknya faktor prima dari n. Sebagai contoh:
+// Input n=30, faktor prima dari 30 adalah 2*3*5, maka m=3
+// Input n=3300, faktor prima dari 3300 adalah 2*2*3*5*11 maka outputnya: m=4.
 #include<iostream>
 #include<cmath>
 using namespace std;
