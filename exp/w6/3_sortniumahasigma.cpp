@@ -13,9 +13,9 @@ int main()
 {
     int n;
     cin>>n;
-    string dummy;
     cin.ignore();
-    mahasiswa mhs[1000];
+    int max = n;
+    mahasiswa mhs[n];
     for (int i=0; i<n; i++){
         getline(cin, mhs[i].nama);
         getline(cin, mhs[i].niu);
@@ -23,7 +23,6 @@ int main()
         cin.ignore();
     }
 
-    // bubble sort https://www.geeksforgeeks.org/cpp/bubble-sort-in-cpp/
     for (int i=0; i<(n-1); i++){
         for (int j=0; j<(n-i-1); j++){
             if (mhs[j].niu > mhs[j+1].niu){
@@ -35,8 +34,6 @@ int main()
     }
 
     for (int i = 0; i < n; i++){
-        cout << mhs[i].niu << " | "
-             << mhs[i].nama << " | "
-             << fixed << setprecision(2) << mhs[i].ipk << endl;
+        cout << mhs[i].niu << " | "<< mhs[i].nama << " | "<< fixed << setprecision(2) << mhs[i].ipk << endl;
     }
 }

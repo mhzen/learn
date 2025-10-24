@@ -5,59 +5,39 @@ using namespace std;
 
 struct sensor
 {
-    int time;    // HHMMSS
-    int lab;     // 1/2/3/...
-    double temp; // °C
-    double hum;  // %RH
+    int time;    // format HHMMSS, contoh: 153010 untuk 15:30:10
+    int lab;     // 1, 2, dsb -> ditampilkan sebagai "lab 1/2/3"
+    double temp; // suhu (C)
+    double hum;  // kelembapan (%RH)
     double co2;  // ppm
 };
 
 int main()
 {
-    ios::sync_with_stdio(false); // https://stackoverflow.com/questions/31162367/significance-of-ios-basesync-with-stdiofalse-cin-tienull
-    cin.tie(nullptr);
+    int n;
+    cin >> n;
+    cin.ignore();
+    int max = n;
+    sensor sns[n];
 
-    // Ambang batas (semua lokal, bukan global)
-    const double TMIN = 24.0;
-    const double TMAX = 30.0;
-    const double HMIN = 40.0;
-    const double HMAX = 60.0;
-    const double CO2_TH = 1000.0;
-
-    int N;
-    if (!(cin >> N))
-        return 0;
-
-    for (int i = 0; i < N; ++i)
+    for (int i = 0; i < n; ++i)
     {
-        sensor s{};
-        cin >> s.lab >> s.time >> s.temp >> s.hum >> s.co2;
-
-        // Klasifikasi kenyamanan
-        bool nyaman = (s.temp >= TMIN && s.temp <= TMAX) &&
-                      (s.hum >= HMIN && s.hum <= HMAX);
-
-        // Cetak: HHMMSS | lab X | temp | hum | status
-        // HHMMSS 6 digit dengan leading zero bila perlu
-        cout << setfill('0') << setw(6) << s.time;
-        cout << " | lab " << s.lab
-             << " | " << fixed << setprecision(2) << s.temp
-             << " | " << fixed << setprecision(2) << s.hum
-             << " | " << (nyaman ? "Nyaman" : "Tidak") << "\n";
-
-        // Deteksi bahaya CO2
-        if (s.co2 > CO2_TH)
+        cin >> sns[i].lab >> sns[i].time >> sns[i].temp >> sns[i].hum >> sns[i].co2;
+    }
+    cout << fixed << setprecision(2);
+    for (int i = 0; i < n; ++i)
+    {
+        string nyaman = ((sns[i].temp >= 24 && sns[i].temp <= 30) && (sns[i].hum >= 40 && sns[i].hum <= 60)) ? "Nyaman" : "Tidak";
+        cout << sns[i].time << " | lab " << sns[i].lab << " | " << sns[i].temp << " | " << sns[i].hum << " | " << nyaman << endl;
+    }
+    for (int i = 0; i < n; ++i)
+    {
+        if (sns[i].co2 > 1000)
         {
-            int hh = s.time / 10000;
-            int mm = (s.time / 100) % 100;
-            int ss = s.time % 100;
-
-            cout << setfill('0') << setw(2) << hh << ":"
-                 << setw(2) << mm << ":"
-                 << setw(2) << ss
-                 << " di lab " << s.lab
-                 << " bahaya, kadar CO2 melebihi ambang batas aman\n";
+            int h = sns[i].time / 10000;
+            int m = (sns[i].time / 100) % 100;
+            int s = sns[i].time % 100;
+            cout << h << ":" << m << ":" << s << " di lab " << sns[i].lab << " bahaya, kadar CO2 melebihi ambang batas aman " << endl;
         }
     }
-    return 0;
 }

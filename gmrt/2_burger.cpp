@@ -1,6 +1,9 @@
 #include<bits/stdc++.h>
 using namespace std;
 
+// Program ini mengikuti logika di CONTOH dimana burger ayam membutuhkan 2 Roti DAN 1 Daging Ayam (Diasumsikan dari hasil)
+// Berbeda dengan di SOAL dimana burger ayam membutuhkan 2 Roti DAN 2 Daging Ayam
+
 int main(){
     int r, s, a, p, q;
     cin>>r>>s>>a>>p>>q;
@@ -11,11 +14,13 @@ int main(){
         k += burgerSapi * p;
         r -= burgerSapi * 2;
 
-        int burgerAyam = a/2;
+        // Jika mengikuti soal maka burgerAyam = a/2
+        int burgerAyam = a;
         if (burgerAyam > (r/2)) burgerAyam = r/2;
         k += burgerAyam * q;
     }else{
-        int burgerAyam = a/2;
+        // Jika mengikuti soal maka burgerAyam = a/2
+        int burgerAyam = a;
         if (burgerAyam > (r/2)) burgerAyam = r/2;
         k += burgerAyam * q;
         r -= burgerAyam * 2;

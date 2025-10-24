@@ -1,7 +1,8 @@
-#include<iostream>
-#include<string>
-#include<iomanip>
+#include <iostream>
+#include <iomanip>
+#include <string>
 using namespace std;
+
 struct mahasiswa
 {
     string nama;
@@ -9,24 +10,29 @@ struct mahasiswa
     float ipk;
 };
 
-int main()
+main()
 {
     int n;
-    cin>>n;
-    string dummy;
+    cin >> n;
     cin.ignore();
-    mahasiswa mhs[1000];
-    for (int i=0; i<n; i++){
+    int max = n;
+    mahasiswa mhs[n];
+    for (int i = 0; i < n; i++){
         getline(cin, mhs[i].nama);
         getline(cin, mhs[i].niu);
-        cin>>mhs[i].ipk;
+        cin >> mhs[i].ipk;
         cin.ignore();
     }
-    cout<<"Cumlaude (IPK >= 3.50):"<<endl;
-    cout<<fixed<<setprecision(2);
-    for (int i=0; i<n; i++){
-        if (mhs[i].ipk >= 3.50){
-            cout<<mhs[i].nama<<" - "<<mhs[i].niu<<" - "<<mhs[i].ipk<<endl;
+    cout << "Cumlaude (IPK >= 3.50):" << endl;
+    cout << fixed << setprecision(2);
+    bool adaCumlaude = 0;
+    for (int i = 0; i < n; i++){
+        if (mhs[i].ipk >= 3.50)
+        {
+            cout << mhs[i].nama << " - NIU " << mhs[i].niu << " - IPK " << mhs[i].ipk << endl;
+            adaCumlaude = 1;
         }
     }
+    if (adaCumlaude != 1)
+        cout << "Tidak ada mahasiswa cumlaude.";
 }
