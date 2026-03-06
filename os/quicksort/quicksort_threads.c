@@ -3,7 +3,8 @@
 #include <pthread.h>
 #include <time.h>
 
-#define THRESHOLD 1000 // Only create threads for chunks larger than this
+#define SIZE 100000
+#define THRESHOLD 10000 // Only create threads for chunks larger than this
 
 struct SortArgs {
     int *arr;
@@ -26,7 +27,7 @@ int partition(int arr[], int low, int high) {
     return (i + 1);
 }
 
-void* threaded_quickSort(void* arg) {
+void* quickSort(void* arg) {
     struct SortArgs* args = (struct SortArgs*)arg;
     int low = args->low;
     int high = args->high;
@@ -38,45 +39,44 @@ void* threaded_quickSort(void* arg) {
         struct SortArgs leftArgs = {arr, low, pi - 1};
         struct SortArgs rightArgs = {arr, pi + 1, high};
 
-        // If the task is big enough, spawn a thread for the left side
         if ((high - low) > THRESHOLD) {
             pthread_t leftThread;
-            pthread_create(&leftThread, NULL, threaded_quickSort, &leftArgs);
+            pthread_create(&leftThread, NULL, quickSort, &leftArgs);
+     
+            quickSort(&rightArgs);
 
-            // Current thread handles the right side
-            threaded_quickSort(&rightArgs);
-
-            // Wait for the worker thread to finish
             pthread_join(leftThread, NULL);
         } else {
-            // If the task is small, just do it sequentially (no new thread)
-            threaded_quickSort(&leftArgs);
-            threaded_quickSort(&rightArgs);
+            quickSort(&leftArgs);
+            quickSort(&rightArgs);
         }
     }
     return NULL;
 }
 
 int main() {
-    int n = 100000;
-    int *data = malloc(n * sizeof(int));
+    int *data = malloc(SIZE * sizeof(int));
     srand(time(NULL));
 
-    for (int i = 0; i < n; i++) data[i] = rand() % 100000;
+    for (int i = 0; i < SIZE; i++) data[i] = rand() % 100000;
 
-    struct SortArgs args = {data, 0, n - 1};
+    struct SortArgs args = {data, 0, SIZE - 1};
 
-    printf("Sorting %d elements with threads...\n", n);
+    printf("Menyortir %d elemen dengan threads...\n", SIZE);
 
-    clock_t start = clock();
-    threaded_quickSort(&args);
-    clock_t end = clock();
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
 
-    printf("Done! Time taken: %f seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
+    quickSort(&args);
 
-    // Print first 10 to verify
+    clock_gettime(CLOCK_MONOTONIC, &end);
+
+    printf("Selesai! Waktu: %f sekon\n", (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9);
+
     for(int i=0; i<100; i++) printf("%d ", data[i]);
-    printf("\n");
+    printf("...\n");
+
+    printf("Data ter generate dengan sukses.\n");
 
     free(data);
     return 0;

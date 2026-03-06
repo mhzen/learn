@@ -6,7 +6,7 @@
 #include <time.h>
 
 #define SIZE 100000
-#define THRESHOLD 10000 // Higher threshold for processes because fork() is heavy
+#define THRESHOLD 10000
 
 void swap(int* a, int* b) { int t = *a; *a = *b; *b = t; }
 
@@ -23,11 +23,10 @@ int partition(int arr[], int low, int high) {
     return (i + 1);
 }
 
-void quicksort_process(int arr[], int low, int high) {
+void quickSort(int arr[], int low, int high) {
     if (low < high) {
         int pi = partition(arr, low, high);
 
-        // We only fork if the work is big enough to justify the overhead
         if (high - low > THRESHOLD) {
             pid_t pid = fork();
 
@@ -35,25 +34,20 @@ void quicksort_process(int arr[], int low, int high) {
                 perror("Fork failed");
                 exit(1);
             } else if (pid == 0) {
-                // Child process handles the left side
-                quicksort_process(arr, low, pi - 1);
-                exit(0); // Child must exit so it doesn't return to main()
+                quickSort(arr, low, pi - 1);
+                exit(0);
             } else {
-                // Parent process handles the right side
-                quicksort_process(arr, pi + 1, high);
-                // Parent waits for the child to finish its half
+                quickSort(arr, pi + 1, high);
                 wait(NULL); 
             }
         } else {
-            // Sequential recursion for smaller chunks
-            quicksort_process(arr, low, pi - 1);
-            quicksort_process(arr, pi + 1, high);
+            quickSort(arr, low, pi - 1);
+            quickSort(arr, pi + 1, high);
         }
     }
 }
 
 int main() {
-    // Step 1: Create Shared Memory
     int *data = mmap(NULL, SIZE * sizeof(int), PROT_READ | PROT_WRITE, 
                      MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 
@@ -65,20 +59,22 @@ int main() {
     srand(time(NULL));
     for (int i = 0; i < SIZE; i++) data[i] = rand() % 100000;
 
-    printf("Sorting %d elements with Multiprogramming (fork)...\n", SIZE);
+    printf("Menyortir %d elemen dengan multiprogramming...\n", SIZE);
 
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    quicksort_process(data, 0, SIZE - 1);
+    quickSort(data, 0, SIZE - 1);
 
     clock_gettime(CLOCK_MONOTONIC, &end);
-    double time_taken = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
 
-    printf("Finished! Wall time: %f seconds\n", time_taken);
-    printf("First 5: %d %d %d %d %d\n", data[0], data[1], data[2], data[3], data[4]);
+    printf("Selesai! Waktu: %f sekon\n", (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9);
 
-    // Cleanup
+    for(int i=0; i<100; i++) printf("%d ", data[i]);
+    printf("...\n");
+
+    printf("Data ter generate dengan sukses.\n");
+
     munmap(data, SIZE * sizeof(int));
     return 0;
 }

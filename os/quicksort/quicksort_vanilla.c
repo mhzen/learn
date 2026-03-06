@@ -11,7 +11,7 @@ void swap(int* a, int* b) {
 }
 
 int partition(int arr[], int low, int high) {
-    int pivot = arr[high]; // Choosing the last element as pivot
+    int pivot = arr[high];
     int i = (low - 1);
 
     for (int j = low; j <= high - 1; j++) {
@@ -40,9 +40,7 @@ int main() {
         data[i] = rand() % 100000;
     }
 
-    // This is where we will call our parallel sort later!
-
-    printf("Sorting %d elements...\n", SIZE);
+    printf("Menyortir %d elemen dengan rekursif...\n", SIZE);
     clock_t start = clock();
 
     quickSort(data, 0, SIZE - 1);
@@ -50,13 +48,12 @@ int main() {
     clock_t end = clock();
     double time_taken = ((double)end - start) / CLOCKS_PER_SEC;
 
-    printf("Finished! Time: %f seconds\n", time_taken);
+    printf("Selesai! Waktu: %f sekon\n", time_taken);
 
-    // Basic verification: check if first 5 are sorted
     for(int i=0; i<100; i++) printf("%d ", data[i]);
     printf("...\n");
 
-    printf("Data generated successfully.\n");
+    printf("Data ter generate dengan sukses.\n");
     free(data);
     return 0;
 }
