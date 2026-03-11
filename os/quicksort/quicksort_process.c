@@ -6,7 +6,7 @@
 #include <time.h>
 
 #define SIZE 100000
-#define THRESHOLD 10000
+#define MAX_DEPTH 4
 
 void swap(int* a, int* b) { int t = *a; *a = *b; *b = t; }
 
@@ -23,26 +23,32 @@ int partition(int arr[], int low, int high) {
     return (i + 1);
 }
 
-void quickSort(int arr[], int low, int high) {
+void quickSort(int arr[], int low, int high, int depth) {
     if (low < high) {
         int pi = partition(arr, low, high);
 
-        if (high - low > THRESHOLD) {
+        // Jika kedalaman belum mencapai batas, gunakan Multiprocessing
+        if (depth < MAX_DEPTH) {
             pid_t pid = fork();
 
             if (pid < 0) {
-                perror("Fork failed");
-                exit(1);
+                // Jika fork gagal, otomatis jalankan sekuensial untuk bagian ini
+                quickSort(arr, low, pi - 1, MAX_DEPTH); 
+                quickSort(arr, pi + 1, high, MAX_DEPTH);
             } else if (pid == 0) {
-                quickSort(arr, low, pi - 1);
-                exit(0);
+                // Child Process: Mengerjakan sisi kiri
+                quickSort(arr, low, pi - 1, depth + 1);
+                exit(0); 
             } else {
-                quickSort(arr, pi + 1, high);
-                wait(NULL); 
+                // Parent Process: Mengerjakan sisi kanan
+                quickSort(arr, pi + 1, high, depth + 1);
+                wait(NULL); // Tunggu child selesai agar data konsisten
             }
-        } else {
-            quickSort(arr, low, pi - 1);
-            quickSort(arr, pi + 1, high);
+        } 
+        // Jika sudah mencapai MAX_DEPTH, jalankan Rekursi Biasa (Sekuensial)
+        else {
+            quickSort(arr, low, pi - 1, depth + 1);
+            quickSort(arr, pi + 1, high, depth + 1);
         }
     }
 }
@@ -64,7 +70,7 @@ int main() {
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    quickSort(data, 0, SIZE - 1);
+    quickSort(data, 0, SIZE - 1, 0);
 
     clock_gettime(CLOCK_MONOTONIC, &end);
 

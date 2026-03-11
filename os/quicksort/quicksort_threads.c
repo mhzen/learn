@@ -4,12 +4,13 @@
 #include <time.h>
 
 #define SIZE 100000
-#define THRESHOLD 10000 // Only create threads for chunks larger than this
+#define MAX_DEPTH 4 // ~16 thread aktif
 
 struct SortArgs {
     int *arr;
     int low;
     int high;
+    int depth;
 };
 
 void swap(int* a, int* b) { int t = *a; *a = *b; *b = t; }
@@ -32,21 +33,32 @@ void* quickSort(void* arg) {
     int low = args->low;
     int high = args->high;
     int* arr = args->arr;
+    int depth = args->depth;
 
     if (low < high) {
         int pi = partition(arr, low, high);
 
-        struct SortArgs leftArgs = {arr, low, pi - 1};
-        struct SortArgs rightArgs = {arr, pi + 1, high};
+        // Jika kedalaman belum mencapai limit, gunakan Multithreading
+        if (depth < MAX_DEPTH) {
+            struct SortArgs leftArgs = {arr, low, pi - 1, depth + 1};
+            struct SortArgs rightArgs = {arr, pi + 1, high, depth + 1};
 
-        if ((high - low) > THRESHOLD) {
             pthread_t leftThread;
-            pthread_create(&leftThread, NULL, quickSort, &leftArgs);
-     
-            quickSort(&rightArgs);
-
-            pthread_join(leftThread, NULL);
-        } else {
+            if (pthread_create(&leftThread, NULL, quickSort, &leftArgs) == 0) {
+                // Sisi kanan dikerjakan thread saat ini secara rekursif
+                quickSort(&rightArgs);
+                pthread_join(leftThread, NULL);
+            } else {
+                // Fallback jika pthread_create gagal
+                quickSort(&leftArgs);
+                quickSort(&rightArgs);
+            }
+        } 
+        // Jika sudah mencapai limit, gunakan Rekursi Sekuensial biasa
+        else {
+            struct SortArgs leftArgs = {arr, low, pi - 1, depth + 1};
+            struct SortArgs rightArgs = {arr, pi + 1, high, depth + 1};
+            
             quickSort(&leftArgs);
             quickSort(&rightArgs);
         }
@@ -60,7 +72,7 @@ int main() {
 
     for (int i = 0; i < SIZE; i++) data[i] = rand() % 100000;
 
-    struct SortArgs args = {data, 0, SIZE - 1};
+    struct SortArgs args = {data, 0, SIZE - 1, 0};
 
     printf("Menyortir %d elemen dengan threads...\n", SIZE);
 
