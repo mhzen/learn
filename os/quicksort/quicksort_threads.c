@@ -6,6 +6,7 @@
 #define SIZE 100000
 #define MAX_DEPTH 4 // ~16 thread aktif
 
+// Struct diperlukan karena pthread_create hanya menerima satu parameter void*
 struct SortArgs {
     int *arr;
     int low;
@@ -47,6 +48,7 @@ void* quickSort(void* arg) {
             if (pthread_create(&leftThread, NULL, quickSort, &leftArgs) == 0) {
                 // Sisi kanan dikerjakan thread saat ini secara rekursif
                 quickSort(&rightArgs);
+                // Menunggu thread pendamping selesai sebelum naik ke level rekursi diatas
                 pthread_join(leftThread, NULL);
             } else {
                 // Fallback jika pthread_create gagal
@@ -67,6 +69,7 @@ void* quickSort(void* arg) {
 }
 
 int main() {
+    // Menggunakan malloc biasa karena thread berada di dalam satu virtual address space yang sama
     int *data = malloc(SIZE * sizeof(int));
     srand(time(NULL));
 

@@ -54,6 +54,8 @@ void quickSort(int arr[], int low, int high, int depth) {
 }
 
 int main() {
+    // mmap: Membuat shared memory. Penting karena proses memiliki memori terisolasi.
+    // Tanpa MAP_SHARED, hasil pengurutan child process tidak akan tersimpan di array utama.
     int *data = mmap(NULL, SIZE * sizeof(int), PROT_READ | PROT_WRITE, 
                      MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 
