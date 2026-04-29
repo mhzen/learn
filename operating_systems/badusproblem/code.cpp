@@ -1,198 +1,142 @@
 #include <iostream>
-#include <string>
 #include <vector>
+#include <string>
 #include <algorithm>
-#include <cstring>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <dirent.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <cstring>
 
 using namespace std;
 
-// Recursively find a regular file with the given name starting from 'dir'.
-// Returns the relative path without a leading "./" (e.g., "115YL/6EFBDMWOKL/I11GVOQQ8Y").
-string find_file(const string& dir, const string& target) {
-    DIR* d = opendir(dir.c_str());
-    if (!d) return "";
-    struct dirent* ent;
-    while ((ent = readdir(d)) != NULL) {
-        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
-            continue;
-        string full = dir + "/" + ent->d_name;
+// Mencari path file atau directory secara rekursif
+// type 1 untuk file, type 2 untuk directory
+// base_path adalah path awal
+// target_name adalah nama file atau directory yang dicari
+string find_recursive(const string& base_path, const string& target_name, int type) {
+    DIR* dir = opendir(base_path.c_str());
+    if (!dir) return "";
+
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != nullptr) {
+        string name = entry->d_name;
+        if (name == "." || name == "..") continue;
+
+        string full_path = base_path + "/" + name;
         struct stat st;
-        if (lstat(full.c_str(), &st) == -1) continue;
+        lstat(full_path.c_str(), &st);
+
+        if ((type == 1 && S_ISREG(st.st_mode) && name == target_name) ||
+            (type == 2 && S_ISDIR(st.st_mode) && name == target_name)) {
+            closedir(dir);
+            return full_path;
+        }
+
         if (S_ISDIR(st.st_mode)) {
-            string res = find_file(full, target);
-            if (!res.empty()) {
-                closedir(d);
-                return res;
+            string found = find_recursive(full_path, target_name, type);
+            if (!found.empty()) {
+                closedir(dir);
+                return found;
             }
-        } else if (S_ISREG(st.st_mode) && ent->d_name == target) {
-            closedir(d);
-            return full;
         }
     }
-    closedir(d);
+    closedir(dir);
     return "";
 }
 
-// Recursively find a directory with the given name.
-string find_dir(const string& dir, const string& target) {
-    DIR* d = opendir(dir.c_str());
-    if (!d) return "";
-    struct dirent* ent;
-    while ((ent = readdir(d)) != NULL) {
-        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
-            continue;
-        string full = dir + "/" + ent->d_name;
+// Hapus directory kosong secara rekursif
+void delete_empty_dirs(const string& path) {
+    DIR* dir = opendir(path.c_str());
+    if (!dir) return;
+
+    struct dirent* entry;
+    bool has_content = false;
+    while ((entry = readdir(dir)) != nullptr) {
+        string name = entry->d_name;
+        if (name == "." || name == "..") continue;
+
+        has_content = true;
+        string full_path = path + "/" + name;
         struct stat st;
-        if (lstat(full.c_str(), &st) == -1) continue;
+        lstat(full_path.c_str(), &st);
+
         if (S_ISDIR(st.st_mode)) {
-            if (ent->d_name == target) {
-                closedir(d);
-                return full;  // relative path like "something/JPI040GPV8"
-            }
-            string res = find_dir(full, target);
-            if (!res.empty()) {
-                closedir(d);
-                return res;
-            }
+            delete_empty_dirs(full_path);
         }
     }
-    closedir(d);
-    return "";
-}
+    closedir(dir);
 
-// Delete empty directories recursively, excluding any whose path starts with
-// "./My Collection/". Paths are relative to the original working directory.
-void delete_empty_dirs(const string& dirpath, const string& relpath) {
-    DIR* d = opendir(dirpath.c_str());
-    if (!d) return;
-    struct dirent* ent;
-    while ((ent = readdir(d)) != NULL) {
-        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
-            continue;
-        string sub_full = dirpath + "/" + ent->d_name;
-        string sub_rel = relpath + "/" + ent->d_name;
-        struct stat st;
-        if (lstat(sub_full.c_str(), &st) == -1) continue;
-        if (S_ISDIR(st.st_mode)) {
-            delete_empty_dirs(sub_full, sub_rel);
-        }
-    }
-    closedir(d);
-
-    // Re-open to check if now empty
-    d = opendir(dirpath.c_str());
-    if (!d) return;
-    bool empty = true;
-    while ((ent = readdir(d)) != NULL) {
-        if (strcmp(ent->d_name, ".") != 0 && strcmp(ent->d_name, "..") != 0) {
-            empty = false;
-            break;
-        }
-    }
-    closedir(d);
-
-    // Delete if empty and not inside "My Collection/" subtree
-    // (the pattern "./My Collection/*" means path starts with "./My Collection/")
-    if (empty) {
-        if (relpath.rfind("./My Collection/", 0) != 0) { // does NOT start with that prefix
-            rmdir(dirpath.c_str());
-        }
-    }
+    // Jika bukan root dan tidak ditemukan (atau dihapus semua)
+    if (path != ".") rmdir(path.c_str());
 }
 
 int main() {
-    // 1. Unzip sisop.zip
-    pid_t pid = fork();
-    if (pid == 0) {
-        execlp("unzip", "unzip", "sisop.zip", (char*)NULL);
-        perror("unzip failed");
-        _exit(1);
-    } else {
-        wait(NULL);
+    // 1. unzip sisop.zip
+    system("unzip -q sisop.zip"); 
+    chdir("sisop");
+
+    // 2. I11GVOQQ8Y=$(find . -type f -name I11GVOQQ8Y)
+    string i11_path = find_recursive(".", "I11GVOQQ8Y", 1);
+    cout << i11_path << endl;
+
+    // 3. ln $I11GVOQQ8Y ./I11GVOQQ8Y && rm $I11GVOQQ8Y
+    if (!i11_path.empty()) {
+        link(i11_path.c_str(), "./I11GVOQQ8Y"); // Hard link
+        unlink(i11_path.c_str());               // Remove original
     }
 
-    // 2. Enter the extracted sisop directory
-    chdir("sisop");
-    char cwd[1024];
-    getcwd(cwd, sizeof(cwd));   // absolute path to sisop
-
-    // 3. Find I11GVOQQ8Y, create hard link, remove original
-    string file_path = find_file(".", "I11GVOQQ8Y");
-    cout << file_path << endl;
-    link(file_path.c_str(), "I11GVOQQ8Y");
-    unlink(file_path.c_str());
-
-    // 4. Find JPI040GPV8 directory
-    string jpi_path = find_dir(".", "JPI040GPV8");
+    // 4. JPI040GPV8=$(find . -name "JPI040GPV8" -type d)
+    string jpi_path = find_recursive(".", "JPI040GPV8", 2);
     cout << jpi_path << endl;
 
-    // 5. Create "My Collection"
+    // 5. mkdir -p "My Collection"
     mkdir("My Collection", 0755);
 
-    // 6. Create symbolic links for every item inside JPI040GPV8
-    DIR* jpi_dir = opendir(jpi_path.c_str());
-    if (jpi_dir) {
+    // 6. for item in $JPI040GPV8/*; do ln -s ...
+    if (!jpi_path.empty()) {
+        DIR* dir = opendir(jpi_path.c_str());
         struct dirent* entry;
-        // jpi_path is something like "some/path/JPI040GPV8" (no leading ./)
-        while ((entry = readdir(jpi_dir)) != NULL) {
-            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-                continue;
-            // absolute path of the source item
+        char cwd[1024];
+        getcwd(cwd, sizeof(cwd));
+
+        while ((entry = readdir(dir)) != nullptr) {
+            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) continue;
+            
             string src = string(cwd) + "/" + jpi_path + "/" + entry->d_name;
-            // absolute path of the symlink in My Collection
-            string link = string(cwd) + "/My Collection/" + entry->d_name;
-            symlink(src.c_str(), link.c_str());
+            string dest = string(cwd) + "/My Collection/" + entry->d_name;
+            symlink(src.c_str(), dest.c_str());
         }
-        closedir(jpi_dir);
+        closedir(dir);
     }
 
-    // 7. Delete all empty directories except those under "My Collection"
-    delete_empty_dirs(".", ".");
+    // 7. find . -type d -empty -delete
+    delete_empty_dirs(".");
 
-    // 8. Find L3TB91 directory and symlink as "sys"
-    string l3_path = find_dir(".", "L3TB91");
-    if (!l3_path.empty()) {
-        symlink(l3_path.c_str(), "sys");
+    // 8. L3TB91=$(find . -type d -name L3TB91) && ln -s $L3TB91 ./sys
+    string l3t_path = find_recursive(".", "L3TB91", 2);
+    if (!l3t_path.empty()) {
+        symlink(l3t_path.c_str(), "./sys");
     }
 
-    // 9. Determine the last file alphabetically (ignoring directories)
+    // 9. ls -p | grep -v / | sort | tail -n 1
     vector<string> files;
-    DIR* cur = opendir(".");
-    if (cur) {
-        struct dirent* e;
-        while ((e = readdir(cur)) != NULL) {
-            if (strcmp(e->d_name, ".") == 0 || strcmp(e->d_name, "..") == 0)
-                continue;
-            struct stat st;
-            if (stat(e->d_name, &st) == -1) continue; // follow symlinks
-            if (!S_ISDIR(st.st_mode)) {  // not a directory (symlinks to dirs are excluded)
-                files.push_back(e->d_name);
-            }
+    DIR* dr = opendir(".");
+    struct dirent* en;
+    while ((en = readdir(dr)) != nullptr) {
+        struct stat st;
+        lstat(en->d_name, &st);
+        if (S_ISREG(st.st_mode)) {
+            files.push_back(en->d_name);
         }
-        closedir(cur);
     }
+    closedir(dr);
     sort(files.begin(), files.end());
-    string lastfile = files.back();  // the last one alphabetically
+    string last_file = files.back();
 
-    // 10. Save recursive listing into that file (overwriting)
-    pid = fork();
-    if (pid == 0) {
-        int fd = open(lastfile.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-        if (fd < 0) _exit(1);
-        dup2(fd, STDOUT_FILENO);
-        close(fd);
-        execlp("ls", "ls", "-Rl", ".", (char*)NULL);
-        perror("ls failed");
-        _exit(1);
-    } else {
-        wait(NULL);
-    }
+    // 10. ls -Rl . > $LASTFILE
+    string cmd = "ls -Rl . > " + last_file;
+    system(cmd.c_str());
 
     return 0;
 }

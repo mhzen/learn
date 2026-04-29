@@ -20,9 +20,12 @@ echo $JPI040GPV8
 
 mkdir -p "My Collection"
 
+# pakai for loop untuk melakukan symlink untuk tiap2 dir dibawah $JPI040GPV8
+# untuk tiap item gunakan command ln -s (untuk softlink) {source} {destination}
+
 for item in $JPI040GPV8/*; do ln -s $(pwd)/$item "$(pwd)/My Collection/$(basename $item)"; done
 
-find . -type d -empty -not -path "./My Collection/*" -delete
+find . -type d -empty -delete
 
 L3TB91=$(find . -type d -name L3TB91)
 
